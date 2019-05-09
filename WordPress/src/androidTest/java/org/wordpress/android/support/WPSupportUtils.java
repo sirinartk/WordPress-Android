@@ -30,6 +30,8 @@ import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.longClick;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.action.ViewActions.swipeLeft;
+import static androidx.test.espresso.action.ViewActions.swipeRight;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed;
@@ -147,6 +149,17 @@ public class WPSupportUtils {
                 .perform(closeSoftKeyboard());
     }
 
+    public static void populateTextFieldWithin(Integer elementID, String text) {
+        waitForElementToBeDisplayed(elementID);
+
+        onView(allOf(
+                isDescendantOfA(withId(elementID)),
+                withId(R.id.input)
+        ))
+        .perform(replaceText(text))
+        .perform(closeSoftKeyboard());
+    }
+
     public static void populateTextField(ViewInteraction element, String text) {
         waitForElementToBeDisplayed(element);
         element.perform(replaceText(text))
@@ -203,6 +216,28 @@ public class WPSupportUtils {
         clickOn(view);
     }
 
+    public static void scrollToTopOfRecyclerView(final RecyclerView recyclerView) {
+        // Prevent java.lang.IllegalStateException:
+        // Cannot call this method while RecyclerView is computing a layout or scrolling
+        waitForConditionToBeTrue(new Supplier<Boolean>() {
+            @Override public Boolean get() {
+                return !recyclerView.isComputingLayout();
+            }
+        });
+
+        // Let the layout settle down before attempting to scroll
+        idleFor(100);
+
+        getCurrentActivity().runOnUiThread(new Runnable() {
+            @Override public void run() {
+                recyclerView.scrollToPosition(0);
+            }
+        });
+
+        // Let the layout settle down after scrolling
+        idleFor(100);
+    }
+
     public static void selectItemAtIndexInSpinner(Integer index, Integer spinnerElementID) {
         clickOn(spinnerElementID);
         clickOnSpinnerItemAtIndex(index);
@@ -214,12 +249,32 @@ public class WPSupportUtils {
     }
 
     public static void selectItemWithTitleInTabLayout(String string, Integer elementID) {
-        onView(
+        Integer tries = 0;
+        Integer maxTries = 10;
+
+        for (Integer i = 0; i < 10; i++) {
+            onView(withId(elementID)).perform(swipeRight());
+        }
+
+        while (!tabLayoutHasTextDisplayed(elementID, string) && tries < maxTries) {
+            onView(withId(elementID)).perform(swipeLeft());
+            tries++;
+        }
+
+        tabItemInTabLayoutWithTitle(elementID, string).perform(click());
+    }
+
+    private static Boolean tabLayoutHasTextDisplayed(Integer elementID, String text) {
+        return isElementCompletelyDisplayed(tabItemInTabLayoutWithTitle(elementID, text));
+    }
+
+    private static ViewInteraction tabItemInTabLayoutWithTitle(Integer tabLayoutElement, String title) {
+        return onView(
                 allOf(
-                        withText(string),
-                        isDescendantOfA(withId(R.id.tabLayout))
-                     )
-              ).perform(click());
+                   withText(title),
+                   isDescendantOfA(withId(tabLayoutElement))
+                )
+        );
     }
 
     // WAITERS
@@ -524,5 +579,9 @@ public class WPSupportUtils {
         });
 
         return mCurrentActivity;
+    }
+
+    public static String getTranslatedString(Integer resourceID) {
+        return getCurrentActivity().getResources().getString(resourceID);
     }
 }
