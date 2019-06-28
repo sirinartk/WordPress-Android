@@ -1676,7 +1676,7 @@ public class PluginDetailActivity extends AppCompatActivity implements OnDomainR
                 break;
             default:
                 // no_jetpack_sites, no_ssl_certificate, no_wpcom_nameservers, not_resolving_to_wpcom
-                errorMessageRes = R.string.plugin_install_site_ineligible_default_error;
+                errorMessageRes = R.string.plugin_install_site_ineligible_default_and_domain_error;
                 break;
         }
         return getString(errorMessageRes);
