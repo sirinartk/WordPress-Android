@@ -74,7 +74,7 @@ android {
     productFlavors {
         vanilla { // used for release and beta
             dimension "buildType"
-            versionName "13.0-rc-1"
+            versionName "13.0"
             versionCode 761
         }
 
